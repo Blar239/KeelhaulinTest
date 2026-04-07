@@ -14,21 +14,16 @@ var hand_index: int = -1
 
 func _ready():
 	original_y = position.y
-	# If setup() was already called before _ready (shouldn't happen, but safe)
+	# Set high z-index to render above UI
+	z_index = 100
 	if card_data != null:
 		_update_texture()
 
 func setup(data: CardData):
 	card_data = data
 	is_ghost = data.is_ghost
-	# card_sprite may not be ready yet if called before _ready
-	# Use call_deferred to ensure node is in tree
 	if is_inside_tree():
 		_update_texture()
-	else:
-		# Will be picked up in _ready, but _ready fires after add_child
-		# so we set a flag and update after
-		pass
 
 func _update_texture():
 	if card_data == null:

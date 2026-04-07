@@ -7,12 +7,15 @@
 script = ExtResource("1_gmgr")
 
 [node name="Player1Hand" parent="." instance=ExtResource("2_phnd")]
+z_index = 5
 position = Vector2(576, 600)
 
 [node name="Player2Hand" parent="." instance=ExtResource("2_phnd")]
+z_index = 5
 position = Vector2(576, 90)
 
 [node name="UI" type="CanvasLayer" parent="."]
+layer = -1
 
 [node name="Background" type="ColorRect" parent="UI"]
 offset_right = 1152.0

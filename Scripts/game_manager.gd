@@ -72,18 +72,16 @@ func _ready():
 	
 	player_hands = [player1_hand_node, player2_hand_node]
 	
-	# Setup hand positions
-	player1_hand_node.setup(0, 0, 0)
-	player2_hand_node.setup(1, 0, 0)
+	# Don't use setup() - just set position directly
+	player1_hand_node.player_id = 0
+	player2_hand_node.player_id = 1
 	
-	# Connect signals
-	player1_hand_node.connect("play_requested", _on_play_requested)
-	player2_hand_node.connect("play_requested", _on_play_requested)
+	# Force positions
+	player1_hand_node.position = Vector2(576, 600)
+	player2_hand_node.position = Vector2(576, 90)
 	
-	play_button.connect("pressed", _on_play_button_pressed)
-	discard_button.connect("pressed", _on_discard_button_pressed)
-	draw_pile_button.connect("pressed", _on_draw_pile_pressed)
-	discard_pile_display.connect("pressed", _on_discard_pile_pressed)
+	print("Set Player1Hand to: ", player1_hand_node.position)
+	print("Set Player2Hand to: ", player2_hand_node.position)
 	
 	start_game()
 

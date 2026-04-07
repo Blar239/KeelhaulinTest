@@ -17,15 +17,19 @@ var is_active: bool = false      # Is it this player's turn?
 var types_played_this_round: Array = []  # CardData.CardType values played this round
 
 func _ready():
-	pass
+	z_index = 100
 
 func setup(pid: int, start_x: float, start_y: float):
 	player_id = pid
-	position = Vector2(start_x, start_y)
+	position = Vector2(start_x, start_y)  # Make sure this line exists!
+	print("PlayerHand ", pid, " setup at position: ", position)
 
 func deal_cards(card_data_array: Array):
+	print("Dealing ", card_data_array.size(), " cards to hand")
 	for data in card_data_array:
 		_add_card_node(data)
+	# Small delay to ensure all nodes are added before layout
+	await get_tree().process_frame
 	_layout_hand()
 
 func add_card(card_data: CardData):
@@ -34,17 +38,20 @@ func add_card(card_data: CardData):
 
 func _add_card_node(card_data: CardData):
 	var card_node = CARD_SCENE.instantiate()
-	# Add to scene tree FIRST so _ready() fires and @onready vars resolve
-	add_child(card_node)
-	# NOW call setup — CardSprite @onready is valid after add_child
-	card_node.setup(card_data)
+	card_node.card_data = card_data
+	card_node.is_ghost = card_data.is_ghost
 	card_node.hand_index = hand_cards.size()
-
-	# Append to tracking arrays ONCE here (not in add_card too)
+	
+	add_child(card_node)
+	
+	# Ensure card renders above UI
+	card_node.z_index = 100
+	
 	hand_cards.append(card_data)
 	card_nodes.append(card_node)
-
-	# Connect signals
+	
+	_layout_hand()
+	
 	card_node.connect("card_clicked", _on_card_clicked)
 	card_node.connect("hovered", _on_card_hovered)
 	card_node.connect("hovered_off", _on_card_hovered_off)
@@ -53,14 +60,19 @@ func _layout_hand():
 	var count = card_nodes.size()
 	if count == 0:
 		return
+	
 	var total_width = (count - 1) * CARD_SPACING
 	var start_x = -total_width / 2.0
+	
 	for i in range(count):
 		var card = card_nodes[i]
-		card.position = Vector2(start_x + i * CARD_SPACING, 0)
-		card.original_y = 0.0
+		card.position = Vector2(start_x + i * CARD_SPACING, HAND_Y)
+		card.original_y = HAND_Y
 		card.z_index = i
 		card.hand_index = i
+		
+		# Debug: print card position
+		print("Card ", i, " positioned at: ", card.position, " relative to hand")
 
 func _on_card_clicked(card):
 	if not is_active:
