@@ -1,49 +1,128 @@
-[gd_scene load_steps=4 format=3 uid="uid://bnnsnasj5a8k4"]
+[gd_scene load_steps=3 format=3 uid="uid://bnnsnasj5a8k4"]
 
-[ext_resource type="Script" uid="uid://8qno7y6lfugj" path="res://Scripts/card_manager.gd" id="1_bo1nx"]
-[ext_resource type="PackedScene" uid="uid://b4nwmeyndnq33" path="res://Scenes/card.tscn" id="2_8gbba"]
-[ext_resource type="PackedScene" uid="uid://2viy0n46f4dc" path="res://Scenes/card_slot.tscn" id="3_8gbba"]
+[ext_resource type="Script" uid="uid://cjmiact5ps3k0" path="res://Scripts/game_manager.gd" id="1_gmgr"]
+[ext_resource type="PackedScene" path="res://Scenes/player_hand.tscn" id="2_phnd"]
 
 [node name="Main" type="Node2D"]
+script = ExtResource("1_gmgr")
 
-[node name="CardManager" type="Node2D" parent="."]
-script = ExtResource("1_bo1nx")
+[node name="Player1Hand" parent="." instance=ExtResource("2_phnd")]
+position = Vector2(600, 650)
 
-[node name="Card" parent="CardManager" instance=ExtResource("2_8gbba")]
-position = Vector2(187, 311)
+[node name="Player2Hand" parent="." instance=ExtResource("2_phnd")]
+position = Vector2(600, 120)
 
-[node name="Card2" parent="CardManager" instance=ExtResource("2_8gbba")]
-position = Vector2(185, 509)
+[node name="UI" type="CanvasLayer" parent="."]
 
-[node name="CardSlots" type="Node2D" parent="."]
-position = Vector2(114, 40)
+[node name="Background" type="ColorRect" parent="UI"]
+offset_right = 1200.0
+offset_bottom = 800.0
+color = Color(0.08, 0.25, 0.12, 1)
 
-[node name="CardSlot" parent="CardSlots" instance=ExtResource("3_8gbba")]
-position = Vector2(394, 360)
+[node name="TableZone" type="ColorRect" parent="UI"]
+offset_left = 200.0
+offset_top = 200.0
+offset_right = 1000.0
+offset_bottom = 580.0
+color = Color(0.05, 0.18, 0.08, 1)
 
-[node name="CardSlot2" parent="CardSlots" instance=ExtResource("3_8gbba")]
-position = Vector2(494, 359)
+[node name="RoundLabel" type="Label" parent="UI"]
+offset_left = 20.0
+offset_top = 10.0
+offset_right = 300.0
+offset_bottom = 40.0
+theme_override_font_sizes/font_size = 20
+text = "Round 1 / 3"
 
-[node name="CardSlot3" parent="CardSlots" instance=ExtResource("3_8gbba")]
-position = Vector2(594, 359)
+[node name="ScoreLabel" type="Label" parent="UI"]
+offset_left = 400.0
+offset_top = 10.0
+offset_right = 800.0
+offset_bottom = 40.0
+theme_override_font_sizes/font_size = 20
+text = "P1: 0 pts | P2: 0 pts"
+horizontal_alignment = 1
 
-[node name="CardSlot4" parent="CardSlots" instance=ExtResource("3_8gbba")]
-position = Vector2(694, 359)
+[node name="PhaseLabel" type="Label" parent="UI"]
+offset_left = 820.0
+offset_top = 10.0
+offset_right = 1180.0
+offset_bottom = 40.0
+theme_override_font_sizes/font_size = 18
+text = "Player 1 — Draw a card"
+horizontal_alignment = 2
 
-[node name="CardSlot5" parent="CardSlots" instance=ExtResource("3_8gbba")]
-position = Vector2(794, 359)
+[node name="StatusLabel" type="Label" parent="UI"]
+offset_left = 200.0
+offset_top = 380.0
+offset_right = 1000.0
+offset_bottom = 420.0
+theme_override_font_sizes/font_size = 18
+text = "Welcome to Keelhaulin!"
+horizontal_alignment = 1
 
-[node name="CardSlot6" parent="CardSlots" instance=ExtResource("3_8gbba")]
-position = Vector2(394, 490)
+[node name="DrawPile" type="Button" parent="UI"]
+offset_left = 320.0
+offset_top = 290.0
+offset_right = 430.0
+offset_bottom = 380.0
+theme_override_font_sizes/font_size = 14
+text = "Draw
+Pile"
 
-[node name="CardSlot7" parent="CardSlots" instance=ExtResource("3_8gbba")]
-position = Vector2(494, 490)
+[node name="DrawPileCountLabel" type="Label" parent="UI"]
+offset_left = 320.0
+offset_top = 385.0
+offset_right = 430.0
+offset_bottom = 415.0
+theme_override_font_sizes/font_size = 12
+text = "36 cards"
+horizontal_alignment = 1
 
-[node name="CardSlot8" parent="CardSlots" instance=ExtResource("3_8gbba")]
-position = Vector2(594, 490)
+[node name="DiscardPile" type="Button" parent="UI"]
+offset_left = 450.0
+offset_top = 290.0
+offset_right = 560.0
+offset_bottom = 380.0
+theme_override_font_sizes/font_size = 14
+text = "Discard
+Pile"
 
-[node name="CardSlot9" parent="CardSlots" instance=ExtResource("3_8gbba")]
-position = Vector2(694, 490)
+[node name="DiscardCardDisplay" type="TextureRect" parent="UI"]
+offset_left = 455.0
+offset_top = 215.0
+offset_right = 555.0
+offset_bottom = 290.0
+stretch_mode = 5
 
-[node name="CardSlot10" parent="CardSlots" instance=ExtResource("3_8gbba")]
-position = Vector2(794, 490)
+[node name="PlayButton" type="Button" parent="UI"]
+offset_left = 700.0
+offset_top = 290.0
+offset_right = 850.0
+offset_bottom = 335.0
+theme_override_font_sizes/font_size = 18
+text = "▶ Play Selected"
+
+[node name="DiscardButton" type="Button" parent="UI"]
+offset_left = 700.0
+offset_top = 345.0
+offset_right = 850.0
+offset_bottom = 390.0
+theme_override_font_sizes/font_size = 18
+text = "✕ Discard 1"
+
+[node name="P1Label" type="Label" parent="UI"]
+offset_left = 20.0
+offset_top = 620.0
+offset_right = 200.0
+offset_bottom = 650.0
+theme_override_font_sizes/font_size = 16
+text = "▲ Player 1 (You)"
+
+[node name="P2Label" type="Label" parent="UI"]
+offset_left = 20.0
+offset_top = 90.0
+offset_right = 200.0
+offset_bottom = 120.0
+theme_override_font_sizes/font_size = 16
+text = "▼ Player 2"
