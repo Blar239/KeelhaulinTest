@@ -54,17 +54,18 @@ var discard_top_node = null  # Visual node for top of discard
 
 @onready var player_hands: Array  # Set in _ready after scene setup
 @onready var ui = $UI
-@onready var draw_pile_button = $UI/DrawPile
-@onready var discard_pile_display = $UI/DiscardPile
-@onready var play_button = $UI/PlayButton
-@onready var discard_button = $UI/DiscardButton
-@onready var status_label = $UI/StatusLabel
-@onready var score_label = $UI/ScoreLabel
-@onready var round_label = $UI/RoundLabel
-@onready var phase_label = $UI/PhaseLabel
-@onready var player1_hand_node = $Player1Hand
-@onready var player2_hand_node = $Player2Hand
-@onready var discard_card_display = $UI/DiscardCardDisplay
+@onready var ui_controls = $UIControls
+@onready var draw_pile_button = $UIControls/DrawPile
+@onready var discard_pile_display = $UIControls/DiscardPile
+@onready var play_button = $UIControls/PlayButton
+@onready var discard_button = $UIControls/DiscardButton
+@onready var status_label = $UIControls/StatusLabel
+@onready var score_label = $UIControls/ScoreLabel
+@onready var round_label = $UIControls/RoundLabel
+@onready var phase_label = $UIControls/PhaseLabel
+@onready var player1_hand_node = $CardsLayer/Player1Hand
+@onready var player2_hand_node = $CardsLayer/Player2Hand
+@onready var discard_card_display = $UIControls/DiscardCardDisplay
 
 func _ready():
 	deck_manager = DeckManager.new()
@@ -72,16 +73,18 @@ func _ready():
 	
 	player_hands = [player1_hand_node, player2_hand_node]
 	
-	# Don't use setup() - just set position directly
-	player1_hand_node.player_id = 0
-	player2_hand_node.player_id = 1
+	# Setup hand positions
+	player1_hand_node.setup(0, 0, 0)
+	player2_hand_node.setup(1, 0, 0)
 	
-	# Force positions
-	player1_hand_node.position = Vector2(576, 600)
-	player2_hand_node.position = Vector2(576, 90)
+	# Connect signals
+	player1_hand_node.connect("play_requested", _on_play_requested)
+	player2_hand_node.connect("play_requested", _on_play_requested)
 	
-	print("Set Player1Hand to: ", player1_hand_node.position)
-	print("Set Player2Hand to: ", player2_hand_node.position)
+	play_button.connect("pressed", _on_play_button_pressed)
+	discard_button.connect("pressed", _on_discard_button_pressed)
+	draw_pile_button.connect("pressed", _on_draw_pile_pressed)
+	discard_pile_display.connect("pressed", _on_discard_pile_pressed)
 	
 	start_game()
 
