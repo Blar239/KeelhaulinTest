@@ -29,18 +29,21 @@ func deal_cards(card_data_array: Array):
 	_layout_hand()
 
 func add_card(card_data: CardData):
-	hand_cards.append(card_data)
 	_add_card_node(card_data)
 	_layout_hand()
 
 func _add_card_node(card_data: CardData):
 	var card_node = CARD_SCENE.instantiate()
+	# Add to scene tree FIRST so _ready() fires and @onready vars resolve
 	add_child(card_node)
+	# NOW call setup — CardSprite @onready is valid after add_child
 	card_node.setup(card_data)
 	card_node.hand_index = hand_cards.size()
+
+	# Append to tracking arrays ONCE here (not in add_card too)
 	hand_cards.append(card_data)
 	card_nodes.append(card_node)
-	
+
 	# Connect signals
 	card_node.connect("card_clicked", _on_card_clicked)
 	card_node.connect("hovered", _on_card_hovered)
@@ -62,38 +65,33 @@ func _layout_hand():
 func _on_card_clicked(card):
 	if not is_active:
 		return
-	
+
 	# Check if card is a ghost and if that type has been played
 	if card.card_data.is_ghost:
 		var base_type = card.card_data.card_type
 		if not base_type in types_played_this_round:
 			return  # Ghost not yet unlocked for this type
-	
+
 	if card in selected_cards:
 		_deselect_card(card)
 	else:
 		_select_card(card)
 
 func _select_card(card):
-	# For normal cards: can select multiple only if same type
-	# For special cards: select alone
 	if card.card_data.is_special():
-		# Deselect all others first
 		_clear_selection()
 		selected_cards.append(card)
 		card.set_selected(true)
 		return
-	
-	# Check if selection is consistent (same type or ghost of same type)
+
 	var sel_type = _get_selection_type()
 	var card_base_type = card.card_data.card_type
-	
+
 	if sel_type == -1 or sel_type == card_base_type:
 		selected_cards.append(card)
 		card.set_selected(true)
 		emit_signal("card_selected", card, player_id)
 	else:
-		# Different type - clear and start fresh
 		_clear_selection()
 		selected_cards.append(card)
 		card.set_selected(true)
@@ -117,50 +115,37 @@ func _get_selection_type() -> int:
 func can_play_selected() -> bool:
 	if selected_cards.size() == 0:
 		return false
-	
+
 	var card = selected_cards[0]
-	
-	# Special cards can always be played alone
+
 	if card.card_data.is_special():
 		return selected_cards.size() == 1
-	
-	# Ghost cards: can play alone if type has been played
+
 	if card.card_data.is_ghost:
 		return selected_cards.size() == 1
-	
-	# 3+ of same type: allowed
-	if selected_cards.size() >= 3:
+
+	if selected_cards.size() >= 1:
 		return true
-	
-	# 1 normal card: always allowed
-	if selected_cards.size() == 1:
-		return true
-	
-	# 2 of same type: allowed  
-	if selected_cards.size() == 2:
-		return true
-	
+
 	return false
 
 func play_selected_cards() -> Array:
 	if not can_play_selected():
 		return []
-	
+
 	var played = selected_cards.duplicate()
-	
-	# Track type played
+
 	if played.size() > 0 and not played[0].card_data.is_ghost:
 		var t = played[0].card_data.card_type
 		if t not in types_played_this_round and not played[0].card_data.is_special():
 			types_played_this_round.append(t)
-	
-	# Remove from hand
+
 	for card in played:
 		_remove_card(card)
-	
+
 	selected_cards.clear()
 	_layout_hand()
-	
+
 	return played
 
 func _remove_card(card_node):
@@ -171,7 +156,6 @@ func _remove_card(card_node):
 		card_node.queue_free()
 
 func remove_top_card_for_discard() -> CardData:
-	# Remove and return last card (for discarding)
 	if hand_cards.size() == 0:
 		return null
 	var idx = hand_cards.size() - 1
@@ -191,7 +175,6 @@ func is_empty() -> bool:
 
 func set_active(active: bool):
 	is_active = active
-	# Visual feedback
 	modulate = Color(1, 1, 1, 1) if active else Color(0.6, 0.6, 0.6, 1)
 
 func reset_round():
@@ -205,6 +188,7 @@ func _on_card_hovered(card):
 func _on_card_hovered_off(card):
 	card.set_highlighted(false)
 
-# Required by card.gd - connect_card_signals stub (cards call this on parent)
+# Stub required because card.gd calls get_parent().connect_card_signals in old code
+# No longer needed but kept for safety
 func connect_card_signals(_card):
-	pass  # Signals connected directly in _add_card_node
+	pass
