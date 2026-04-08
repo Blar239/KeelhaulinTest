@@ -187,6 +187,25 @@ func reset_round():
 	types_played_this_round.clear()
 	_clear_selection()
 
+func has_valid_play() -> bool:
+	for card in hand_cards:
+		if card.is_special():
+			return true
+	
+	for card in hand_cards:
+		if card.is_ghost and card.card_type in types_played_this_round:
+			return true
+	
+	var type_counts = {}
+	for card in hand_cards:
+		if not card.is_ghost and not card.is_special():
+			var t = card.card_type
+			type_counts[t] = type_counts.get(t, 0) + 1
+			if type_counts[t] >= 3:
+				return true
+	
+	return false
+
 func _on_card_hovered(card):
 	if is_active:
 		card.set_highlighted(true)

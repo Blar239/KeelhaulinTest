@@ -6,12 +6,13 @@ extends Node2D
 # Rules:
 #  - 2 players, each dealt 7 cards from a shared deck
 #  - Players take turns: draw or take from discard, then play or discard
-#  - Playing 3+ cards of same type = chest (10 pts each chest)
+#  - Playing 3+ cards of same type = adds 10 pts to community chest
 #  - Ghost cards: unlocked after that type played once this round
 #    Playing a ghost = 20 pts personal (not chest)
-#  - Special Cannon: steals 5-30 pts from opponent
+#  - Special Cannon: subtracts 5-30 pts from opponent (rounded to 0 or 5)
 #  - Round ends when a player empties their hand after discarding
-#  - Game ends after agreed rounds (default 3)
+#  - Community chest awarded to player who wins the round
+#  - Game ends when a player reaches 200+ points
 
 const PLAYER_HAND_SCENE = preload("res://Scenes/player_hand.tscn")
 const CARD_SCENE = preload("res://Scenes/card.tscn")
@@ -20,7 +21,8 @@ const CHEST_POINTS = 10
 const GHOST_POINTS = 20
 const CANNON_MIN = 5
 const CANNON_MAX = 30
-const TOTAL_ROUNDS = 3
+const WIN_THRESHOLD = 200
+const MAX_HAND_SIZE = 10
 
 enum GamePhase {
 	WAITING,
@@ -45,8 +47,8 @@ var has_played_this_turn: bool = false
 
 # Scores
 var player_scores: Array = [0, 0]       # Total game scores
-var player_chest_scores: Array = [0, 0] # Chest contributions
 var player_personal_scores: Array = [0, 0] # Ghost/special contributions
+var community_chest: int = 0            # Community chest points (awarded to round winner)
 
 # Round tracking
 var cards_played_this_turn: int = 0
@@ -66,6 +68,7 @@ var discard_top_node = null  # Visual node for top of discard
 @onready var player1_hand_node = $CardsLayer/Player1Hand
 @onready var player2_hand_node = $CardsLayer/Player2Hand
 @onready var discard_card_display = $UIControls/DiscardCardDisplay
+@onready var valid_play_label = $UIControls/ValidPlayLabel
 
 func _ready():
 	deck_manager = DeckManager.new()
@@ -90,8 +93,8 @@ func _ready():
 
 func start_game():
 	player_scores = [0, 0]
-	player_chest_scores = [0, 0]
 	player_personal_scores = [0, 0]
+	community_chest = 0
 	round_number = 1
 	current_player = 0
 	start_round()
@@ -210,23 +213,27 @@ func _resolve_played_cards(card_nodes: Array, pid: int):
 	
 	var first_card: CardData = card_nodes[0].card_data
 	
-	# Special: Rum (draw 2 extra cards)
+	# Special: Rum (draw 2 extra cards, max 10 in hand)
 	if first_card.card_type == CardData.CardType.SPECIAL_CANNON:
 		var hand = player_hands[pid]
+		var cards_drawn = 0
 		for i in range(2):
+			if hand.get_hand_size() >= MAX_HAND_SIZE:
+				break
 			var card = deck_manager.draw_card()
 			if card:
 				hand.add_card(card)
-		_show_status("RUM! Drew 2 extra cards!")
+				cards_drawn += 1
+		_show_status("RUM! Drew %d extra card(s)!" % cards_drawn)
 		return
 	
-	# Special: Cannon Shot (steal points from opponent)
+	# Special: Cannon Shot (subtract points from opponent, rounded to 0 or 5)
 	if first_card.card_type == CardData.CardType.SPECIAL_GHOST:
-		var stolen = randi_range(CANNON_MIN, CANNON_MAX)
+		var raw_damage = randi_range(CANNON_MIN, CANNON_MAX)
+		var damage = snapped(raw_damage, 5)
 		var opponent = 1 - pid
-		player_scores[opponent] -= stolen
-		player_scores[pid] += stolen
-		_show_status("CANNON! Stole %d points from Player %d!" % [stolen, opponent + 1])
+		player_scores[opponent] -= damage
+		_show_status("CANNON! Took %d points from Player %d!" % [damage, opponent + 1])
 		return
 	
 	# Ghost card played (single ghost = 20 personal pts)
@@ -244,26 +251,32 @@ func _resolve_played_cards(card_nodes: Array, pid: int):
 	if played_type not in player_hands[pid].types_played_this_round:
 		player_hands[pid].types_played_this_round.append(played_type)
 	
-	# 3 or more of same type = chest(s)
+	# 3 or more of same type = chest points + community chest
 	if count >= 3:
 		var chests = count / 3
-		var chest_pts = chests * CHEST_POINTS
-		player_chest_scores[pid] += chest_pts
-		player_scores[pid] += chest_pts
-		_show_status("CHEST! %d cards played = +%d points!" % [count, chest_pts])
+		community_chest += CHEST_POINTS
+		player_personal_scores[pid] += count * CHEST_POINTS
+		player_scores[pid] += count * CHEST_POINTS
+		_show_status("CHEST! %d cards = +%d pts + %d to community chest!" % [count, count * CHEST_POINTS, CHEST_POINTS])
 	else:
 		_show_status("Played %d %s card(s)." % [count, first_card.get_type_name()])
 
 func _end_round(winner_pid: int):
 	_set_phase(GamePhase.ROUND_END)
-	_show_status("Round %d over! Player %d wins the round!" % [round_number, winner_pid + 1])
+	
+	if community_chest > 0:
+		player_scores[winner_pid] += community_chest
+		_show_status("Player %d wins the round and claims %d community chest points!" % [winner_pid + 1, community_chest])
+		community_chest = 0
+	else:
+		_show_status("Round %d over! Player %d wins the round!" % [round_number, winner_pid + 1])
+	
 	_update_ui()
 	
-	if round_number >= TOTAL_ROUNDS:
+	if player_scores[winner_pid] >= WIN_THRESHOLD:
 		_end_game()
 	else:
 		round_number += 1
-		# Brief delay then start next round
 		await get_tree().create_timer(3.0).timeout
 		start_round()
 
@@ -302,9 +315,19 @@ func _show_status(msg: String):
 
 func _update_ui():
 	if score_label:
-		score_label.text = "P1: %d pts | P2: %d pts" % [player_scores[0], player_scores[1]]
+		var chest_info = " | Chest: %d" % community_chest if community_chest > 0 else ""
+		score_label.text = "P1: %d pts | P2: %d pts%s" % [player_scores[0], player_scores[1], chest_info]
 	if round_label:
-		round_label.text = "Round %d / %d" % [round_number, TOTAL_ROUNDS]
+		round_label.text = "Round %d" % round_number
+	
+	if valid_play_label and current_player >= 0 and current_player < player_hands.size():
+		var hand = player_hands[current_player]
+		if hand.has_valid_play():
+			valid_play_label.text = "✓ Can Play!"
+			valid_play_label.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3, 1))
+		else:
+			valid_play_label.text = "✗ Must Discard"
+			valid_play_label.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3, 1))
 	if phase_label:
 		match current_phase:
 			GamePhase.DRAW_PHASE:
