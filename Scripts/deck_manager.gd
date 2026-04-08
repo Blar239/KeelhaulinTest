@@ -3,11 +3,13 @@ class_name DeckManager
 
 # Standard Keelhaulin deck composition
 # 8 normal types x 4 copies each = 32 normal cards
+# 8 ghost types x 1 copy each = 8 ghost cards
 # 2 special cannon cards
 # 2 special ghost/wild cards
-# Total: 36 cards per deck
+# Total: 44 cards per deck
 
 const CARDS_PER_TYPE = 4
+const GHOST_CARDS_PER_TYPE = 1
 const SPECIAL_COUNT = 2
 const HAND_SIZE = 7
 
@@ -17,12 +19,20 @@ var discard_pile: Array = []
 func build_deck() -> Array:
 	var deck = []
 	
-	# Add normal cards
+	# Add normal cards (higher chance)
 	for card_type in CardData.NORMAL_TYPES:
 		for i in range(CARDS_PER_TYPE):
 			var data = CardData.new()
 			data.card_type = card_type
 			data.is_ghost = false
+			deck.append(data)
+	
+	# Add ghost cards (lower chance, unlocked after playing that type)
+	for card_type in CardData.NORMAL_TYPES:
+		for i in range(GHOST_CARDS_PER_TYPE):
+			var data = CardData.new()
+			data.card_type = card_type
+			data.is_ghost = true
 			deck.append(data)
 	
 	# Add special cannon cards

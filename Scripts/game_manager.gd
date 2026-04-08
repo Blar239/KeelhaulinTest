@@ -73,9 +73,9 @@ func _ready():
 	
 	player_hands = [player1_hand_node, player2_hand_node]
 	
-	# Setup hand positions
-	player1_hand_node.setup(0, 0, 0)
-	player2_hand_node.setup(1, 0, 0)
+	# Setup hand positions (positions set in scene editor)
+	player1_hand_node.setup(0)
+	player2_hand_node.setup(1)
 	
 	# Connect signals
 	player1_hand_node.connect("play_requested", _on_play_requested)
@@ -153,6 +153,12 @@ func _on_play_button_pressed():
 		return
 	var hand = player_hands[current_player]
 	if not hand.can_play_selected():
+		var selected = hand.selected_cards
+		if selected.size() > 0 and selected[0].card_data.is_ghost:
+			var base_type = selected[0].card_data.card_type
+			if base_type not in hand.types_played_this_round:
+				_show_status("Ghost locked! Play " + selected[0].card_data.get_type_name() + " type first, or discard.")
+				return
 		_show_status("Select valid cards to play!")
 		return
 	
@@ -204,23 +210,23 @@ func _resolve_played_cards(card_nodes: Array, pid: int):
 	
 	var first_card: CardData = card_nodes[0].card_data
 	
-	# Special: Cannon Shot
+	# Special: Rum (draw 2 extra cards)
 	if first_card.card_type == CardData.CardType.SPECIAL_CANNON:
+		var hand = player_hands[pid]
+		for i in range(2):
+			var card = deck_manager.draw_card()
+			if card:
+				hand.add_card(card)
+		_show_status("RUM! Drew 2 extra cards!")
+		return
+	
+	# Special: Cannon Shot (steal points from opponent)
+	if first_card.card_type == CardData.CardType.SPECIAL_GHOST:
 		var stolen = randi_range(CANNON_MIN, CANNON_MAX)
 		var opponent = 1 - pid
-		stolen = min(stolen, player_scores[opponent])
 		player_scores[opponent] -= stolen
 		player_scores[pid] += stolen
 		_show_status("CANNON! Stole %d points from Player %d!" % [stolen, opponent + 1])
-		return
-	
-	# Special: Ghost Wild (unlocks ghost for ALL types this round? or just counts)
-	if first_card.card_type == CardData.CardType.SPECIAL_GHOST:
-		# Unlock all ghost types for the player this round
-		for t in CardData.NORMAL_TYPES:
-			if t not in player_hands[pid].types_played_this_round:
-				player_hands[pid].types_played_this_round.append(t)
-		_show_status("Ghost Wild! All ghost cards unlocked!")
 		return
 	
 	# Ghost card played (single ghost = 20 personal pts)
@@ -240,8 +246,6 @@ func _resolve_played_cards(card_nodes: Array, pid: int):
 	
 	# 3 or more of same type = chest(s)
 	if count >= 3:
-		# Each group of 3+ cards = one chest = 10 pts
-		# The Sims 2 DS: playing exactly 3 = 1 chest, more = proportional
 		var chests = count / 3
 		var chest_pts = chests * CHEST_POINTS
 		player_chest_scores[pid] += chest_pts

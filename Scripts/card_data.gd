@@ -47,8 +47,8 @@ const TYPE_NAMES = {
 	CardType.BARREL:        "Barrel",
 	CardType.CANNON:        "Cannon",
 	CardType.TREASURE:      "Treasure",
-	CardType.SPECIAL_CANNON:"Cannon Shot",
-	CardType.SPECIAL_GHOST: "Ghost Wild",
+	CardType.SPECIAL_CANNON:"Rum",
+	CardType.SPECIAL_GHOST: "Cannon Shot",
 }
 
 # Normal card types for deck building (excludes specials)

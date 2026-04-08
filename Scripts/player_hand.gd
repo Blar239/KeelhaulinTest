@@ -19,16 +19,12 @@ var types_played_this_round: Array = []  # CardData.CardType values played this 
 func _ready():
 	z_index = 100
 
-func setup(pid: int, start_x: float, start_y: float):
+func setup(pid: int):
 	player_id = pid
-	position = Vector2(start_x, start_y)  # Make sure this line exists!
-	print("PlayerHand ", pid, " setup at position: ", position)
 
 func deal_cards(card_data_array: Array):
-	print("Dealing ", card_data_array.size(), " cards to hand")
 	for data in card_data_array:
 		_add_card_node(data)
-	# Small delay to ensure all nodes are added before layout
 	await get_tree().process_frame
 	_layout_hand()
 
@@ -66,23 +62,14 @@ func _layout_hand():
 	
 	for i in range(count):
 		var card = card_nodes[i]
-		card.position = Vector2(start_x + i * CARD_SPACING, HAND_Y)
 		card.original_y = HAND_Y
+		card.position = Vector2(start_x + i * CARD_SPACING, HAND_Y)
 		card.z_index = i
 		card.hand_index = i
-		
-		# Debug: print card position
-		print("Card ", i, " positioned at: ", card.position, " relative to hand")
 
 func _on_card_clicked(card):
 	if not is_active:
 		return
-
-	# Check if card is a ghost and if that type has been played
-	if card.card_data.is_ghost:
-		var base_type = card.card_data.card_type
-		if not base_type in types_played_this_round:
-			return  # Ghost not yet unlocked for this type
 
 	if card in selected_cards:
 		_deselect_card(card)
@@ -134,9 +121,16 @@ func can_play_selected() -> bool:
 		return selected_cards.size() == 1
 
 	if card.card_data.is_ghost:
+		var base_type = card.card_data.card_type
+		if base_type not in types_played_this_round:
+			return false
 		return selected_cards.size() == 1
 
-	if selected_cards.size() >= 1:
+	if selected_cards.size() >= 3:
+		var card_type = card.card_data.card_type
+		for c in selected_cards:
+			if c.card_data.card_type != card_type:
+				return false
 		return true
 
 	return false
