@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://bnnsnasj5a8k4"]
+[gd_scene load_steps=4 format=3 uid="uid://bnnsnasj5a8k4"]
 
 [ext_resource type="Script" uid="uid://cjmiact5ps3k0" path="res://Scripts/game_manager.gd" id="1_gmgr"]
 [ext_resource type="PackedScene" path="res://Scenes/player_hand.tscn" id="2_phnd"]
+[ext_resource type="Texture2D" uid="uid://bluxuntkjc61n" path="res://Assets/deck.png" id="3_deck"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_gmgr")
@@ -28,6 +29,12 @@ position = Vector2(600, 650)
 
 [node name="Player2Hand" parent="CardsLayer" instance=ExtResource("2_phnd")]
 position = Vector2(600, 120)
+
+[node name="DeckSprite" type="Sprite2D" parent="CardsLayer"]
+z_index = 50
+position = Vector2(267, 336)
+scale = Vector2(0.4, 0.4)
+texture = ExtResource("3_deck")
 
 [node name="UIControls" type="CanvasLayer" parent="."]
 layer = 2

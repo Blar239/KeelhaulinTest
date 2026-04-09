@@ -39,14 +39,14 @@ const GHOST_TEXTURES = {
 }
 
 const TYPE_NAMES = {
-	CardType.ANCHOR:        "Anchor",
-	CardType.WHEEL:         "Wheel",
-	CardType.COMPASS:       "Compass",
-	CardType.ROPE:          "Rope",
-	CardType.LANTERN:       "Lantern",
-	CardType.BARREL:        "Barrel",
-	CardType.CANNON:        "Cannon",
-	CardType.TREASURE:      "Treasure",
+	CardType.ANCHOR:        "Captain",
+	CardType.WHEEL:         "Sailor",
+	CardType.COMPASS:       "Monkey",
+	CardType.ROPE:          "Genie",
+	CardType.LANTERN:       "Maiden",
+	CardType.BARREL:        "Cleaner",
+	CardType.CANNON:        "Skeleton",
+	CardType.TREASURE:      "Captain's Wife",
 	CardType.SPECIAL_CANNON:"Rum",
 	CardType.SPECIAL_GHOST: "Cannon Shot",
 }

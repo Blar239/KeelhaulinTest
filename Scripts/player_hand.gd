@@ -57,15 +57,28 @@ func _layout_hand():
 	if count == 0:
 		return
 	
+	var sorted_nodes = card_nodes.duplicate()
+	sorted_nodes.sort_custom(func(a, b):
+		var a_data = a.card_data
+		var b_data = b.card_data
+		
+		var a_category = 0 if not a_data.is_ghost and not a_data.is_special() else (1 if a_data.is_ghost else 2)
+		var b_category = 0 if not b_data.is_ghost and not b_data.is_special() else (1 if b_data.is_ghost else 2)
+		
+		if a_category != b_category:
+			return a_category < b_category
+		return a_data.card_type < b_data.card_type
+	)
+	
 	var total_width = (count - 1) * CARD_SPACING
 	var start_x = -total_width / 2.0
 	
 	for i in range(count):
-		var card = card_nodes[i]
+		var card = sorted_nodes[i]
 		card.original_y = HAND_Y
 		card.position = Vector2(start_x + i * CARD_SPACING, HAND_Y)
 		card.z_index = i
-		card.hand_index = i
+		card.hand_index = card_nodes.find(card)
 
 func _on_card_clicked(card):
 	if not is_active:
@@ -205,6 +218,25 @@ func has_valid_play() -> bool:
 				return true
 	
 	return false
+
+func get_sort_index_for_card(card_data: CardData) -> int:
+	if hand_cards.size() == 0:
+		return 0
+	
+	var category = 0 if not card_data.is_ghost and not card_data.is_special() else (1 if card_data.is_ghost else 2)
+	var card_type = card_data.card_type
+	
+	for i in range(hand_cards.size()):
+		var existing = hand_cards[i]
+		var existing_category = 0 if not existing.is_ghost and not existing.is_special() else (1 if existing.is_ghost else 2)
+		var existing_type = existing.card_type
+		
+		if category < existing_category:
+			return i
+		elif category == existing_category and card_type < existing_type:
+			return i
+	
+	return hand_cards.size()
 
 func _on_card_hovered(card):
 	if is_active:

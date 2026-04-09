@@ -69,6 +69,10 @@ var discard_top_node = null  # Visual node for top of discard
 @onready var player2_hand_node = $CardsLayer/Player2Hand
 @onready var discard_card_display = $UIControls/DiscardCardDisplay
 @onready var valid_play_label = $UIControls/ValidPlayLabel
+@onready var cards_layer = $CardsLayer
+@onready var deck_sprite = $CardsLayer/DeckSprite
+
+const CARD_DRAW_DURATION = 0.3
 
 func _ready():
 	deck_manager = DeckManager.new()
@@ -136,10 +140,36 @@ func _on_draw_pile_pressed():
 		return
 	var card = deck_manager.draw_card()
 	if card:
-		player_hands[current_player].add_card(card)
+		_spawn_card_to_hand(card, current_player)
 		current_action = TurnAction.DREW_FROM_DECK
 		_set_phase(GamePhase.PLAY_PHASE)
 		_update_discard_display()
+
+func _spawn_card_to_hand(card_data: CardData, pid: int):
+	var hand = player_hands[pid]
+	
+	var card_node = CARD_SCENE.instantiate()
+	card_node.card_data = card_data
+	card_node.is_ghost = card_data.is_ghost
+	
+	cards_layer.add_child(card_node)
+	card_node.z_index = 200
+	
+	var deck_pos = deck_sprite.position if deck_sprite else Vector2(200, 335)
+	card_node.position = deck_pos
+	
+	var hand_size = hand.get_hand_size()
+	var target_x = (hand_size * 110) + 55
+	var target_pos = Vector2(target_x, hand.position.y)
+	
+	var tween = create_tween()
+	tween.tween_property(card_node, "position", target_pos, CARD_DRAW_DURATION).set_ease(Tween.EASE_OUT)
+	tween.tween_callback(func(): _on_card_spawn_complete(card_node, card_data, hand))
+	tween.play()
+
+func _on_card_spawn_complete(card_node, card_data, hand):
+	card_node.queue_free()
+	hand.add_card(card_data)
 
 func _on_discard_pile_pressed():
 	if current_phase != GamePhase.DRAW_PHASE:
@@ -222,8 +252,9 @@ func _resolve_played_cards(card_nodes: Array, pid: int):
 				break
 			var card = deck_manager.draw_card()
 			if card:
-				hand.add_card(card)
+				_spawn_card_to_hand(card, pid)
 				cards_drawn += 1
+		await get_tree().create_timer(CARD_DRAW_DURATION * cards_drawn + 0.1).timeout
 		_show_status("RUM! Drew %d extra card(s)!" % cards_drawn)
 		return
 	
